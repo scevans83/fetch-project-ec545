@@ -1,0 +1,8 @@
+prefix=/home/ubuntu/Documents/fetch_ws/install
+
+Name: fetch_controller
+Description: Description of fetch_controller
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib 
+Requires: 
