@@ -7,5 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export PWD='/home/ubuntu/Documents/fetch_ws/build'
-export PYTHONPATH="/home/ubuntu/Documents/fetch_ws/devel/lib/python3/dist-packages:$PYTHONPATH"
+export PWD='/home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build'

@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "/home/ubuntu/Documents/fetch_ws/devel/share/common-lisp/ros/fetch_controller/msg/controller_state.lisp"
+  "/home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/devel/share/common-lisp/ros/fetch_controller/msg/controller_state.lisp"
   "CMakeFiles/fetch_controller_generate_messages_lisp"
 )
 

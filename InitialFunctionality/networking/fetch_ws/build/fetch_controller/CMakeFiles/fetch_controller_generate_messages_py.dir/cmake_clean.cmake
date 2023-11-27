@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/ubuntu/Documents/fetch_ws/devel/lib/python3/dist-packages/fetch_controller/msg/__init__.py"
-  "/home/ubuntu/Documents/fetch_ws/devel/lib/python3/dist-packages/fetch_controller/msg/_controller_state.py"
+  "/home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/devel/lib/python3/dist-packages/fetch_controller/msg/__init__.py"
+  "/home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/devel/lib/python3/dist-packages/fetch_controller/msg/_controller_state.py"
   "CMakeFiles/fetch_controller_generate_messages_py"
 )
 

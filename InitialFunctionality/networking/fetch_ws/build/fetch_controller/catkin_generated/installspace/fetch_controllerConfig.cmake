@@ -67,14 +67,14 @@ set(fetch_controller_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(fetch_controller_SOURCE_PREFIX /home/ubuntu/Documents/fetch_ws/src/fetch_controller)
-  set(fetch_controller_DEVEL_PREFIX /home/ubuntu/Documents/fetch_ws/devel)
+  set(fetch_controller_SOURCE_PREFIX /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/src/fetch_controller)
+  set(fetch_controller_DEVEL_PREFIX /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/devel)
   set(fetch_controller_INSTALL_PREFIX "")
   set(fetch_controller_PREFIX ${fetch_controller_DEVEL_PREFIX})
 else()
   set(fetch_controller_SOURCE_PREFIX "")
   set(fetch_controller_DEVEL_PREFIX "")
-  set(fetch_controller_INSTALL_PREFIX /home/ubuntu/Documents/fetch_ws/install)
+  set(fetch_controller_INSTALL_PREFIX /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/install)
   set(fetch_controller_PREFIX ${fetch_controller_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/ubuntu/Documents/fetch_ws/install/lib;/home/ubuntu/Documents/fetch_ws/devel/lib;/home/ubuntu/catkin_ws/devel/lib;/opt/ros/noetic/lib)
+    foreach(path /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/install/lib;/home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/devel/lib;/home/ubuntu/catkin_ws/devel/lib;/opt/ros/noetic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

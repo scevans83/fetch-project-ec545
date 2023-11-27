@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/ubuntu/Documents/fetch_ws/src
+CMAKE_SOURCE_DIR = /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/ubuntu/Documents/fetch_ws/build
+CMAKE_BINARY_DIR = /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build
 
 # Utility rule file for fetch_controller_gennodejs.
 
@@ -63,10 +63,10 @@ fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/build: fetch_controll
 .PHONY : fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/build
 
 fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/clean:
-	cd /home/ubuntu/Documents/fetch_ws/build/fetch_controller && $(CMAKE_COMMAND) -P CMakeFiles/fetch_controller_gennodejs.dir/cmake_clean.cmake
+	cd /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build/fetch_controller && $(CMAKE_COMMAND) -P CMakeFiles/fetch_controller_gennodejs.dir/cmake_clean.cmake
 .PHONY : fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/clean
 
 fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/depend:
-	cd /home/ubuntu/Documents/fetch_ws/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/ubuntu/Documents/fetch_ws/src /home/ubuntu/Documents/fetch_ws/src/fetch_controller /home/ubuntu/Documents/fetch_ws/build /home/ubuntu/Documents/fetch_ws/build/fetch_controller /home/ubuntu/Documents/fetch_ws/build/fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/src /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/src/fetch_controller /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build/fetch_controller /home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/build/fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : fetch_controller/CMakeFiles/fetch_controller_gennodejs.dir/depend
 

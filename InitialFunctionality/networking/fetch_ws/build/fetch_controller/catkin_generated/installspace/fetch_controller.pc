@@ -1,4 +1,4 @@
-prefix=/home/ubuntu/Documents/fetch_ws/install
+prefix=/home/ubuntu/Documents/fetch-project-ec545/InitialFunctionality/networking/fetch_ws/install
 
 Name: fetch_controller
 Description: Description of fetch_controller
