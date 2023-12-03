@@ -1,0 +1,2 @@
+string curr_state
+string desired_color_detect
