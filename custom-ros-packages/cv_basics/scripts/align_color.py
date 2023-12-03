@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
-from Rosmaster_Lib import Rosmaster
 
 view_exploration = False
 
@@ -67,7 +64,7 @@ def find_contours(img, tree, approx, lower = 5000, upper = 500000):
     # _, threshold = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
     threshold = cv2.adaptiveThreshold(gray_blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
     # canny_edges = cv2.Canny(image=gray_blur, threshold1=100, threshold2=200)
-    contours, _ = cv2.findContours(threshold, tree, approx)
+    _, contours, _ = cv2.findContours(threshold, tree, approx)
     filtered_contours = []
 
     for contour in contours:
@@ -97,7 +94,6 @@ def predict_color(avg_value, threshold = 100):
     """
     """
   
-    # distances = np.sqrt(np.sum((np.square(avg_value - lab_color_vals)), axis=0))
     distances = np.zeros(len(lab_color_vals))
     for idx in range(len(distances)):
         distances[idx] = np.sqrt(np.sum(np.square(avg_value - lab_color_vals[idx])))
@@ -108,9 +104,6 @@ def predict_color(avg_value, threshold = 100):
         color = None
     else:
         color = color_names[min_idx]
-    
-
-  
     
 
     return color
@@ -143,6 +136,9 @@ def label_contour_colors(img, contours, color_estimates, color = (0, 0, 0)):
     """
 
     #find the center of each contour
+
+    labeled_img = img
+
     for idx in range(len(contours)):
         contour = contours[idx]
         M = cv2.moments(contour)
@@ -153,7 +149,9 @@ def label_contour_colors(img, contours, color_estimates, color = (0, 0, 0)):
         if color_estimates[idx] is not None:
             msg = color_estimates[idx] + msg
 
-        cv2.putText(img, msg, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+        labeled_img = cv2.putText(labeled_img, msg, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+
+    return labeled_img
 
 def find_contours_and_colors(img, lower_threshold, upper_threshold, lower = 5000, upper = 500000,):
     """
@@ -164,14 +162,22 @@ def find_contours_and_colors(img, lower_threshold, upper_threshold, lower = 5000
     contours = find_contours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE, lower=1500, upper=200000)
     color_list = find_contour_colors(img, contours, threshold=100)
 
-    return contours, color_list
+    return contours, color_list, mask
 
 
     # labeled_img = label_contours(img, contours, color=(0, max_color_val, 0))
     # label_contour_colors(labeled_img, contours, color_list, color=(max_color_val, max_color_val, max_color_val))
 
 
+def label_contours_and_colors(img, contours, color_estimates, outline_color =(0, 255, 0), text_color = (255, 255, 255), mask = None ):
+    """
+    """
+    if mask is not None:
+        img = cv2.bitwise_and(img, img, mask = mask)
+    labeled_img = label_contours(img, contours, color=outline_color)
+    labeled_img = label_contour_colors(labeled_img, contours, color_estimates, color=text_color)
 
+    return labeled_img
 
     
     

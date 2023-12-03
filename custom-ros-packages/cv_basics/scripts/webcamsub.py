@@ -12,6 +12,7 @@ from sensor_msgs.msg import Image # Image is the message type
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 import cv2 # OpenCV library
 from std_msgs.msg import String
+from cv_basics.msg import cv_results
 
  
 def callback(data):
@@ -22,7 +23,7 @@ def callback(data):
   # Output debugging information to the terminal
   rospy.loginfo("receiving video frame")
 
-  rospy.loginfo(data)
+  rospy.loginfo(data.detected_color)
    
   # Convert ROS Image message to OpenCV image
   # current_frame = br.imgmsg_to_cv2(data)
@@ -40,7 +41,7 @@ def receive_message():
   rospy.init_node('video_sub_py', anonymous=True)
    
   # Node is subscribing to the video_frames topic
-  rospy.Subscriber('video_frames', String, callback)
+  rospy.Subscriber('/video_processing_results', cv_results, callback)
  
   # spin() simply keeps python from exiting until this node is stopped
   rospy.spin()
