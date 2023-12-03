@@ -1,0 +1,11 @@
+<launch>
+    <!-- start lidar node-->
+    <!-- Activate the lidar node -->
+    <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+    <!-- Start the car chassis drive node -->
+    <!-- Start the car chassis drive node -->
+    <include file="$(find yahboomcar_bringup)/launch/yahboomcar.launch"/>
+    <!-- Handle control node -->
+    <!-- Handle control node -->
+    <include file="$(find yahboomcar_ctrl)/launch/yahboom_joy.launch"/>
+</launch>
