@@ -1,0 +1,11 @@
+<launch>
+    <!-- start the base.launch file -->
+    <!-- Launch the base.launch file -->
+    <include file="$(find yahboomcar_laser)/launch/base.launch"/>
+    <!-- Start the lidar obstacle avoidance node -->
+    <!-- Activate lidar obstacle avoidance node -->
+    <node name='laser_Avoidance' pkg="yahboomcar_laser" type="laser_Avoidance.py" required="true" output="screen"/>
+    <!-- <node pkg="cv_basics" type="webcamsub.py" name="webcam_sub" output="screen"/> -->
+    <include file="$(find cv_basics)/launch/cv_Basics.launch"/>
+    <!-- <node name="image_publisher" pkg="yahboomcar_laser" type="display_img.py" required="true" output="screen" /> -->
+</launch>
