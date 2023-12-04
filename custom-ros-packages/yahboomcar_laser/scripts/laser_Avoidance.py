@@ -12,7 +12,8 @@ from sensor_msgs.msg import LaserScan, Image
 from dynamic_reconfigure.server import Server
 from cv_bridge import CvBridge
 from yahboomcar_laser.cfg import laserAvoidPIDConfig
-from align_color import find_contours_and_colors
+from fetch_controller.msg import state_status
+from cv_basics.msg import cv_results
 RAD2DEG = 180 / math.pi
 direction = [-1, 1]
 
@@ -32,6 +33,18 @@ class laserAvoid:
         self.ResponseDist = 0.55
         self.LaserAngle = 40  # 10~180
         self.sub_laser = rospy.Subscriber('/scan', LaserScan, self.registerScan, queue_size=1)
+        self.cv_sub = rospy.Subscriber('/video_processing_results', cv_results, self.process_cv_results, queue_size=3)
+        self.state_status_sub = rospy.Subscriber('/state_status', state_status, self.process_state_updates, queue_size=3)
+        self.current_state = "exploring"
+        self.image_center = None
+        self.detection_center = None
+        self.center_detections = np.zeros(5)
+        self.moving_average_initalized = False
+        self.last_color_detection = ""
+        self.running_error = 0
+        self.last_error = 0
+        self.velocity_decision = "red"
+        self.last_direction = -1
 
         
 
@@ -48,6 +61,37 @@ class laserAvoid:
         self.LaserAngle = config['LaserAngle']
         self.ResponseDist = config['ResponseDist']
         return config
+    
+    def process_cv_results(self, results):
+
+        if self.current_state == "aligning":
+
+            self.image_center = results.image_center
+            self.detection_center = results.contour_center
+            self.last_color_detection = results.detected_color
+
+            #intialize the moving average
+            if(not self.moving_average_initalized):
+                self.center_detections = self.image_center*np.ones(5, dtype=np.int32)
+                self.moving_average_initalized = True
+
+            self.center_detections[1:-1] = self.center_detections[0:-2]
+            self.center_detections[0] = results.contour_center
+
+        return
+
+    def process_state_updates(self, state):
+
+        #if we are about to transition states stop so we can actually align
+        if self.current_state == "exploring" and state.curr_state != "exploring":
+            rospy.loginfo("stop the boy please")
+            twist = Twist()
+            self.ros_ctrl.pub_vel.publish(twist)
+            sleep(0.2)
+
+        self.current_state = state.curr_state
+
+        return
 
     def registerScan(self, scan_data):
         if not isinstance(scan_data, LaserScan): return
@@ -58,163 +102,170 @@ class laserAvoid:
         self.Left_warning = 0
         self.front_warning = 0
 
-        ####INESERTIONS###
+        #handle our alignment case
+        if self.current_state == "aligning":
 
-        # ret, img = self.frame.read()
-        # if ret == true:
-        #     rospy.loginfo('publishing video frame')
-        #     pub.publish(br.cv2_to_imgmsg(frame))
-        # red_lower = (0, 0, 175)
-        # red_upper = (200, 200, 255)
-
-        # contours, color_list = find_contours_and_colors(img, red_lower, red_upper)
-
-        # cv2.imshow('labeled image',img)
-        # action = cv2.waitKey(20)
-
-        # rospy.loginfo("hello")
-
-        # if "red" in color_list:
-            
-
-        #             #Do some angular adjustment to track the red contours
-        #     num_frames = 5
-        #     image_center_x = np.array(np.int32(np.shape(img)[0]/2))
-        #     moving_average = np.ones(num_frames)*image_center_x
-
-        #     color_of_interest = "red"
-        #     # color_of_interest = "green"
-        #     # color_of_interest = "blue"
-        #     if color_of_interest in color_list:
-
-        #         #find the max red contour
-        #         max_color_idx = None
-        #         max_color_area = -np.inf
-        #         for idx in range(len(color_list)):
-        #             if color_list[idx] == color_of_interest:
-        #                 curr_area = cv2.contourArea(contours[idx])
-        #                 if curr_area > max_color_area:
-        #                     max_color_area = curr_area
-        #                     max_color_idx = idx
+            rospy.loginfo("aligning the boy")
+            max_velocity = 0.5
+            kp = 1 #currently is random.
+            ki = 0.1
+            kd = 0.1
+            time_step = 1/10 #assume ros 10 hz is met
+            curr_error = np.inf
 
 
-        #         curr_offset = find_contour_center(contours[max_color_idx])[0]
-                
+            #we're gonna process the lidar ourselves in the same way they do, but better because these MFs have never seen numpy cook
+            angles = np.array((scan_data.angle_min + scan_data.angle_increment * np.arange(len(ranges))) * RAD2DEG)
+
+            right_angles = (angles < 160) & (angles > 180 - self.LaserAngle)
+            left_angles =  (angles > -160) & (angles < self.LaserAngle - 180)
+            front_angles = np.abs(angles) > 160
+
+            self.Right_warning = np.sum(ranges[right_angles] < self.ResponseDist/2)
+            self.Left_warning = np.sum(ranges[left_angles] < self.ResponseDist/2)
+            self.front_warning = np.sum(ranges[front_angles] < self.ResponseDist/2)
 
 
-                
-        #     else:
-        #         curr_offset = image_center_x
-
-        #     #update velocity
-        #     moving_average[1:-1] = moving_average[0:-2]
-        #     moving_average[0] = curr_offset
-
-        #     #find the center of the max red contour
-            
-
-        #     kp = 5 #currenlty is random.
-        #     angular_velocity = kp*(image_center_x - np.mean(moving_average))/np.shape(img)[0]
-
-        #     rospy.loginfo("desired velocity: ", angular_velocity)
-        #     max_velocity = 1.0
-        #     angular_velocity = np.sign(angular_velocity) * min(np.abs(angular_velocity), max_velocity)
-
-        #     cmd = Twist()
-        #     cmd.linear.x = 0
-        #     cmd.angular.z = angular_velocity
-        #     self.ros_ctrl.pub_vel.publish(cmd)
-
-        # ########
-
-
-
-
-
-
-        # 按距离排序以检查从较近的点到较远的点是否是真实的东西
-        # if we already have a last scan to compare to
-        for i in range(len(ranges)):
-            angle = (scan_data.angle_min + scan_data.angle_increment * i) * RAD2DEG
-            # if angle > 90: print "i: {},angle: {},dist: {}".format(i, angle, scan_data.ranges[i])
-            # 通过清除不需要的扇区的数据来保留有效的数据
-            if 160 > angle > 180 - self.LaserAngle:
-                if ranges[i] < self.ResponseDist: self.Right_warning += 1
-            if - 160 < angle < self.LaserAngle - 180:
-                if ranges[i] < self.ResponseDist: self.Left_warning += 1
-            if abs(angle) > 160:
-                if ranges[i] <= self.ResponseDist: self.front_warning += 1
-        # print (self.Left_warning, self.front_warning, self.Right_warning)
-        if self.ros_ctrl.Joy_active or self.switch == True:
-            if self.Moving == True:
+            if self.velocity_decision == "search" and self.last_color_detection == "red":
                 self.ros_ctrl.pub_vel.publish(Twist())
-                self.Moving = not self.Moving
-            return
-        self.Moving = True
-        twist = Twist()
-        # 左正右负
-        # Left positive and right negative
-        if self.front_warning > 10 and self.Left_warning > 10 and self.Right_warning > 10:
-            # print ('1, there are obstacles in the left and right, turn right')
-            twist.linear.x = -0.15
-            twist.angular.z = -self.angular
+                sleep(0.2)
+
+             
+            if self.last_color_detection == "red":
+                velocity_decision = "p control"
+                curr_error = (self.image_center - np.mean(self.center_detections))/np.float(self.image_center*2)
+                self.running_error += time_step*curr_error
+                angular_velocity = kp*curr_error + ki*self.running_error + (curr_error - self.last_error)*kd
+                angular_velocity = np.sign(angular_velocity) * min(np.abs(angular_velocity), max_velocity)
+                self.last_error = curr_error
+                self.last_direction = np.sign(angular_velocity)
+
+            else:
+                velocity_decision = "search"
+                sign = -1*self.last_direction
+                sign = sign if sign != 0 else -1
+                angular_velocity = sign*max_velocity
+
+            rospy.loginfo("Setting velocity based on %s\n. Image center is %d\n. Center detection is %d\n. Desired velocity is %f", velocity_decision, self.image_center, self.detection_center, angular_velocity)
+
+
+            twist = Twist()
+            twist.angular.z = 0 if np.abs(angular_velocity) < 0.1*max_velocity else angular_velocity
+
+            if np.abs(curr_error) <= 0.25 and self.velocity_decision != "search":
+                if self.front_warning < 20: #may want to have more ifs later so nesting this way
+                    twist.linear.x = 0.15
+                else:
+                    twist.linear.x = 0
+            
+            if twist.linear.x == 0 and twist.angular.z == 0:
+                rospy.loginfo("reached end condition!")
+                #TODO: figure out a way to signal a transition in state
+
             self.ros_ctrl.pub_vel.publish(twist)
             sleep(0.2)
-        elif self.front_warning > 10 and self.Left_warning <= 10 and self.Right_warning > 10:
-            # print ('2, there is an obstacle in the middle right, turn left')
-            twist.linear.x = 0
-            twist.angular.z = self.angular
-            self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.2)
-            if self.Left_warning > 10 and self.Right_warning <= 10:
-                # print ('3, there is an obstacle on the left, turn right')
-                twist.linear.x = 0
+
+
+       
+        #Treat the orignal lidear avoidance as the exploring state
+        if self.current_state == "exploring":
+            # 按距离排序以检查从较近的点到较远的点是否是真实的东西
+            # if we already have a last scan to compare to
+            for i in range(len(ranges)):
+                angle = (scan_data.angle_min + scan_data.angle_increment * i) * RAD2DEG
+                # if angle > 90: print "i: {},angle: {},dist: {}".format(i, angle, scan_data.ranges[i])
+                # 通过清除不需要的扇区的数据来保留有效的数据
+                if 160 > angle > 180 - self.LaserAngle:
+                    if ranges[i] < self.ResponseDist: self.Right_warning += 1
+                if - 160 < angle < self.LaserAngle - 180:
+                    if ranges[i] < self.ResponseDist: self.Left_warning += 1
+                if abs(angle) > 160:
+                    if ranges[i] <= self.ResponseDist: self.front_warning += 1
+            # print (self.Left_warning, self.front_warning, self.Right_warning)
+            angles = np.array((scan_data.angle_min + scan_data.angle_increment * np.arange(len(ranges))) * RAD2DEG)
+            right_angles = (angles < 160) & (angles > 180 - self.LaserAngle)
+            left_angles =  (angles > -160) & (angles < self.LaserAngle - 180)
+            front_angles = np.abs(angles) > 160
+
+            Right_warning = np.sum(ranges[right_angles] < self.ResponseDist)
+            Left_warning = np.sum(ranges[left_angles] < self.ResponseDist)
+            front_warning = np.sum(ranges[front_angles] < self.ResponseDist)
+
+            assert(front_warning == self.front_warning)
+            assert(Left_warning == self.Left_warning)
+            assert(Right_warning == self.Right_warning)
+
+
+            if self.ros_ctrl.Joy_active or self.switch == True:
+                if self.Moving == True:
+                    self.ros_ctrl.pub_vel.publish(Twist())
+                    self.Moving = not self.Moving
+                return
+            self.Moving = True
+            twist = Twist()
+            # 左正右负
+            # Left positive and right negative
+            if self.front_warning > 10 and self.Left_warning > 10 and self.Right_warning > 10:
+                # print ('1, there are obstacles in the left and right, turn right')
+                twist.linear.x = -0.15
                 twist.angular.z = -self.angular
                 self.ros_ctrl.pub_vel.publish(twist)
-                sleep(0.5)
-        elif self.front_warning > 10 and self.Left_warning > 10 and self.Right_warning <= 10:
-            # print ('4. There is an obstacle in the middle left, turn right')
-            twist.linear.x = 0
-            twist.angular.z = -self.angular
-            self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.2)
-            if self.Left_warning <= 10 and self.Right_warning > 10:
-                # print ('5, there is an obstacle on the left, turn left')
+                sleep(0.2)
+            elif self.front_warning > 10 and self.Left_warning <= 10 and self.Right_warning > 10:
+                # print ('2, there is an obstacle in the middle right, turn left')
                 twist.linear.x = 0
                 twist.angular.z = self.angular
                 self.ros_ctrl.pub_vel.publish(twist)
-                sleep(0.5)
-        elif self.front_warning > 10 and self.Left_warning < 10 and self.Right_warning < 10:
-            # print ('6, there is an obstacle in the middle, turn left or right')
-            twist.linear.x = 0
-            twist.angular.z = random.choice(direction)*self.angular
-            self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.2)
-        elif self.front_warning < 10 and self.Left_warning > 10 and self.Right_warning > 10:
-            # print ('7. There are obstacles on the left and right, turn right')
-            twist.linear.x = 0
-            twist.angular.z = -self.angular
-            self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.4)
-        elif self.front_warning < 10 and self.Left_warning > 10 and self.Right_warning <= 10:
-            # print ('8, there is an obstacle on the left, turn right')
-            twist.linear.x = 0
-            twist.angular.z = -self.angular
-            self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.2)
-        elif self.front_warning < 10 and self.Left_warning <= 10 and self.Right_warning > 10:
-            # print ('9, there is an obstacle on the right, turn left')
-            twist.linear.x = 0
-            twist.angular.z = self.angular
-            self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.2)
-        elif self.front_warning <= 10 and self.Left_warning <= 10 and self.Right_warning <= 10:
-            # print ('10, no obstacles, go forward')
-            twist.linear.x = self.linear
-            twist.angular.z = 0
-            self.ros_ctrl.pub_vel.publish(twist)
-        self.r.sleep()
-        # else : self.ros_ctrl.pub_vel.publish(Twist())
+                sleep(0.2)
+                if self.Left_warning > 10 and self.Right_warning <= 10:
+                    # print ('3, there is an obstacle on the left, turn right')
+                    twist.linear.x = 0
+                    twist.angular.z = -self.angular
+                    self.ros_ctrl.pub_vel.publish(twist)
+                    sleep(0.5)
+            elif self.front_warning > 10 and self.Left_warning > 10 and self.Right_warning <= 10:
+                # print ('4. There is an obstacle in the middle left, turn right')
+                twist.linear.x = 0
+                twist.angular.z = -self.angular
+                self.ros_ctrl.pub_vel.publish(twist)
+                sleep(0.2)
+                if self.Left_warning <= 10 and self.Right_warning > 10:
+                    # print ('5, there is an obstacle on the left, turn left')
+                    twist.linear.x = 0
+                    twist.angular.z = self.angular
+                    self.ros_ctrl.pub_vel.publish(twist)
+                    sleep(0.5)
+            elif self.front_warning > 10 and self.Left_warning < 10 and self.Right_warning < 10:
+                # print ('6, there is an obstacle in the middle, turn left or right')
+                twist.linear.x = 0
+                twist.angular.z = random.choice(direction)*self.angular
+                self.ros_ctrl.pub_vel.publish(twist)
+                sleep(0.2)
+            elif self.front_warning < 10 and self.Left_warning > 10 and self.Right_warning > 10:
+                # print ('7. There are obstacles on the left and right, turn right')
+                twist.linear.x = 0
+                twist.angular.z = -self.angular
+                self.ros_ctrl.pub_vel.publish(twist)
+                sleep(0.4)
+            elif self.front_warning < 10 and self.Left_warning > 10 and self.Right_warning <= 10:
+                # print ('8, there is an obstacle on the left, turn right')
+                twist.linear.x = 0
+                twist.angular.z = -self.angular
+                self.ros_ctrl.pub_vel.publish(twist)
+                sleep(0.2)
+            elif self.front_warning < 10 and self.Left_warning <= 10 and self.Right_warning > 10:
+                # print ('9, there is an obstacle on the right, turn left')
+                twist.linear.x = 0
+                twist.angular.z = self.angular
+                self.ros_ctrl.pub_vel.publish(twist)
+                sleep(0.2)
+            elif self.front_warning <= 10 and self.Left_warning <= 10 and self.Right_warning <= 10:
+                # print ('10, no obstacles, go forward')
+                twist.linear.x = self.linear
+                twist.angular.z = 0
+                self.ros_ctrl.pub_vel.publish(twist)
+            self.r.sleep()
+            # else : self.ros_ctrl.pub_vel.publish(Twist())
 
 
 if __name__ == '__main__':

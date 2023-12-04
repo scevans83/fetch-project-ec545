@@ -10,9 +10,10 @@ import rospy # Python library for ROS
 # from sensor_msgs.msg import Image # Image is the message type
 # from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
 import cv2 # OpenCV library
+import numpy as np
 from std_msgs.msg import String
 from cv_basics.msg import cv_results
-from align_color import find_contours_and_colors, label_contours_and_colors
+from align_color import find_contours_and_colors, label_contours_and_colors, find_contour_center
   
 def publish_message():
  
@@ -36,6 +37,7 @@ def publish_message():
   # br = CvBridge()
  
   # While ROS is still running.
+  last_offset = None
   while not rospy.is_shutdown():
      
       # Capture frame-by-frame
@@ -63,8 +65,33 @@ def publish_message():
         cv2.imshow("test", labeled_frame)
         cv2.waitKey(10)
 
+        curr_offset = None
+
+        if desired_color in color_list:
+          #find the max red contour
+          max_color_idx = None
+          max_color_area = -np.inf
+          for idx in range(len(color_list)):
+              if color_list[idx] == desired_color:
+                  curr_area = cv2.contourArea(contours[idx])
+                  if curr_area > max_color_area:
+                      max_color_area = curr_area
+                      max_color_idx = idx
+
+          curr_offset = find_contour_center(contours[max_color_idx])[0]
+
+        if(last_offset == None):
+           last_offset = np.int32(np.shape(frame)[0]/2)
+
+        if(curr_offset == None):
+           curr_offset = np.int32(np.shape(frame)[0]/2)
+
+        last_offset = curr_offset
+
         pub_msg = cv_results()
         pub_msg.detected_color = desired_color if desired_color in color_list else ""
+        pub_msg.image_center = np.int32(np.shape(frame)[0]/2)
+        pub_msg.contour_center = curr_offset if desired_color in color_list else last_offset
         pub.publish(pub_msg)
              
       # Sleep just enough to maintain the desired rate

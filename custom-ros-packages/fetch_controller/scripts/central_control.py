@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding:utf-8
 import rospy
-from geometry_msgs.msg import Twist
-from std_msgs.msg import Bool
+# from geometry_msgs.msg import Twist
+# from std_msgs.msg import Bool
 from fetch_controller.msg import state_status
 from cv_basics.msg import cv_results
 
@@ -12,8 +12,10 @@ class fetchControl:
         self.pub_status = rospy.Publisher('/state_status', state_status, queue_size=3)
         self.sub_image_results = rospy.Subscriber('/video_processing_results', cv_results, self.cv_results_callback)
         self.most_recent_color_detection = ""
+        self.curr_state = "exploring"
 
     def cv_results_callback(self, msg):
+       rospy.loginfo("updating state with color " + msg.detected_color)
        self.most_recent_color_detection = msg.detected_color
        return
        
@@ -43,7 +45,21 @@ def publish_message(controller):
       
       #very basic current state loop
       curr_status = state_status()
-      curr_status.curr_state = "exploring" if controller.most_recent_color_detection != "red" else "aligning"
+
+
+      #### STATE TRANSITION #####
+
+      if controller.curr_state == "exploring":
+         controller.curr_state = "exploring" if controller.most_recent_color_detection != "red" else "aligning"
+      
+      #currently, you get stuck here Jimbo
+      if controller.curr_state == "aligning":
+         pass
+
+      ### end state transition
+
+
+      curr_status.curr_state = controller.curr_state
       controller.pub_status.publish(curr_status)
 
       #TODO: left off modifying laser avoidance to use this status to change what it's doing
