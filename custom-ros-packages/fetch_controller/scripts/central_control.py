@@ -17,7 +17,7 @@ class fetchControl:
         self.reached_ball = False
 
     def cv_results_callback(self, msg):
-       rospy.loginfo("updating state with color " + msg.detected_color)
+       rospy.loginfo("controller: updating state with color " + msg.detected_color)
        self.most_recent_color_detection = msg.detected_color
        return
     
@@ -62,6 +62,7 @@ def publish_message(controller):
 
 
       if controller.curr_state == "exploring1":
+         rospy.loginfo("controller: attempting state update for exploring1. Most recent detection is %s", controller.most_recent_color_detection)
          next_state = "exploring1" if controller.most_recent_color_detection != "red" else "aligning1"
          next_color = "red"
       
@@ -82,14 +83,14 @@ def publish_message(controller):
 
       ### end state transition
 
-      if next_state != controller.curr_state:
-         #update current state
-         controller.curr_state = next_state
+      #update current state
+      controller.curr_state = next_state
 
-         #publish state update
-         curr_status.curr_state = controller.curr_state
-         curr_status.desired_color_detect = next_color
-         controller.pub_status.publish(curr_status)
+      #publish state update
+      curr_status.curr_state = controller.curr_state
+      curr_status.desired_color_detect = next_color
+      controller.pub_status.publish(curr_status)
+      rospy.loginfo("controller: state update to %s\n\n", next_state)
 
       #TODO: left off modifying laser avoidance to use this status to change what it's doing
              

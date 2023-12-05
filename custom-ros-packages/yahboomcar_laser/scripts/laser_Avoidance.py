@@ -36,10 +36,11 @@ class laserAvoid:
         self.sub_laser = rospy.Subscriber('/scan', LaserScan, self.registerScan, queue_size=1)
         self.cv_sub = rospy.Subscriber('/video_processing_results', cv_results, self.process_cv_results, queue_size=3)
         self.state_status_sub = rospy.Subscriber('/state_status', state_status, self.process_state_updates, queue_size=3)
-        self.current_state = "exploring"
+        self.current_state = "exploring1"
         self.desired_color_detection = "red"
         self.aligning_angle = True
         self.in_range_of_goal = False
+        self.transmit_goal_reached = False
 
         #output publisher
         self.aligned_pub = rospy.Publisher('/reached_ball', Bool, queue_size=1)
@@ -114,6 +115,26 @@ class laserAvoid:
         self.Left_warning = 0
         self.front_warning = 0
 
+        rospy.loginfo("laser avoidance current state %s", self.current_state)
+
+        if self.transmit_goal_reached and self.current_state in ["exploring1", "exploring2"]:
+            
+            self.transmit_goal_reached = False
+            
+            #reset a ton of variables
+            self.image_center = None
+            self.detection_center = None
+            self.center_detections = np.zeros(5)
+            self.moving_average_initalized = False
+            self.last_color_detection = ""
+            self.running_error = 0
+            self.last_error = 0
+            self.velocity_decision = "search"
+            self.last_direction = -1
+            self.end_state_counter = 0
+            self.in_range_of_goal = False
+            self.aligning_angle = True
+
         #handle our alignment case
         if self.current_state in ["aligning1", "aligning2"]:
 
@@ -168,7 +189,8 @@ class laserAvoid:
             angle_error_criteria = np.abs(angular_velocity) < 0.2*max_velocity
             twist.angular.z = 0 if angle_error_criteria or not self.aligning_angle else angular_velocity
 
-            self.aligning_angle = not angle_error_criteria 
+            if self.aligning_angle and angle_error_criteria:
+                self.aligning_angle = False
             rospy.loginfo("angle alignment state %d", self.aligning_angle)
 
 
@@ -176,7 +198,7 @@ class laserAvoid:
             rospy.loginfo("number forward lidar detections %d and current velocity driver %s", self.front_warning, self.velocity_decision)
             if not self.aligning_angle: #np.abs(curr_error) <= 0.35 and self.velocity_decision != "search":
                 if self.front_warning < 20: #may want to have more ifs later so nesting this way
-                    twist.linear.x = 0.1
+                    twist.linear.x = 0.25
                     rospy.loginfo("moving towards detection")
                 else:
                     twist.linear.x = 0
@@ -185,28 +207,16 @@ class laserAvoid:
                 #TODO: figure out a way to signal a transition in state
 
             self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.2)
+            sleep(0.1)
 
             #end condition
-            if not self.aligning_angle and self.in_range_of_goal:
+            if (not self.aligning_angle and self.in_range_of_goal) or self.transmit_goal_reached:
                 #for now, just exit if we get it once
                 rospy.loginfo("reached end condition!")
                 self.aligned_pub.publish(True)
-                self.current_state = "" #ensure we don't do anything until the controller tells us
+                
 
-                #reset a ton of variables
-                self.image_center = None
-                self.detection_center = None
-                self.center_detections = np.zeros(5)
-                self.moving_average_initalized = False
-                self.last_color_detection = ""
-                self.running_error = 0
-                self.last_error = 0
-                self.velocity_decision = "search"
-                self.last_direction = -1
-                self.end_state_counter = 0
-                self.in_range_of_goal = False
-                self.aligning_angle = True
+               
 
 
        

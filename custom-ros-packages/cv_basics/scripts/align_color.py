@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from Rosmaster_Lib import Rosmaster
 
 view_exploration = False
 
@@ -7,7 +8,8 @@ view_exploration = False
 #helpful source: https://www.rapidtables.com/web/color/RGB_Color.html
 max_color_val = 255
 supported_colors = {"red":        (0, 0, max_color_val),
-                    "green":      (0, max_color_val, 0),
+                    # "green":      (0, max_color_val, 0),
+                    "green":      (30, 100, 80),
                     # "green":      (30, 100, 80), #specific green folder
                     "blue":       (max_color_val, 0, 0),
                     # "white":      (max_color_val, max_color_val, max_color_val),

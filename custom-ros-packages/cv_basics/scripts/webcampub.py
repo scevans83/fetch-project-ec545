@@ -68,8 +68,10 @@ def publish_message():
 
         #select the proper mask
         if desired_color == "green":
-          lower_color_thresh = (0, 60, 0)
-          upper_color_thresh= (90, 125, 90)
+          # lower_color_thresh = (0, 30, 0)
+          # upper_color_thresh= (110, 150, 110)
+          lower_color_thresh = (0, 0, 0)
+          upper_color_thresh= (255, 255, 255)
           dist_thresh = 150
         elif desired_color == "red":
           lower_color_thresh = (0, 0, 175) 
