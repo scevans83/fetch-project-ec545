@@ -8,6 +8,7 @@ view_exploration = False
 max_color_val = 255
 supported_colors = {"red":        (0, 0, max_color_val),
                     "green":      (0, max_color_val, 0),
+                    # "green":      (30, 100, 80), #specific green folder
                     "blue":       (max_color_val, 0, 0),
                     # "white":      (max_color_val, max_color_val, max_color_val),
                     # "black":      (0, 0, 0),
@@ -153,14 +154,14 @@ def label_contour_colors(img, contours, color_estimates, color = (0, 0, 0)):
 
     return labeled_img
 
-def find_contours_and_colors(img, lower_threshold, upper_threshold, lower = 5000, upper = 500000,):
+def find_contours_and_colors(img, lower_threshold, upper_threshold, lower = 1500, upper = 200000, color_dist_thresh = 100):
     """
     """
 
     mask = bgr_mask(img, lower_threshold, upper_threshold)
     img = cv2.bitwise_and(img, img, mask = mask)
-    contours = find_contours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE, lower=1500, upper=200000)
-    color_list = find_contour_colors(img, contours, threshold=100)
+    contours = find_contours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE, lower=lower, upper=upper)
+    color_list = find_contour_colors(img, contours, threshold=color_dist_thresh)
 
     return contours, color_list, mask
 

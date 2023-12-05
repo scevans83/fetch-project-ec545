@@ -7,6 +7,7 @@ import time
 import random #added KO
 from common import *
 from time import sleep
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan, Image
 from dynamic_reconfigure.server import Server
@@ -36,6 +37,15 @@ class laserAvoid:
         self.cv_sub = rospy.Subscriber('/video_processing_results', cv_results, self.process_cv_results, queue_size=3)
         self.state_status_sub = rospy.Subscriber('/state_status', state_status, self.process_state_updates, queue_size=3)
         self.current_state = "exploring"
+        self.desired_color_detection = "red"
+        self.aligning_angle = True
+        self.in_range_of_goal = False
+
+        #output publisher
+        self.aligned_pub = rospy.Publisher('/reached_ball', Bool, queue_size=1)
+        # self.EdiPublisher = rospy.Publisher('edition', Float32, queue_size=100)
+
+        #used in aligning
         self.image_center = None
         self.detection_center = None
         self.center_detections = np.zeros(5)
@@ -43,8 +53,9 @@ class laserAvoid:
         self.last_color_detection = ""
         self.running_error = 0
         self.last_error = 0
-        self.velocity_decision = "red"
+        self.velocity_decision = "search"
         self.last_direction = -1
+        self.end_state_counter = 0
 
         
 
@@ -64,7 +75,7 @@ class laserAvoid:
     
     def process_cv_results(self, results):
 
-        if self.current_state == "aligning":
+        if self.current_state in ["aligning1", "aligning2"]:
 
             self.image_center = results.image_center
             self.detection_center = results.contour_center
@@ -83,13 +94,14 @@ class laserAvoid:
     def process_state_updates(self, state):
 
         #if we are about to transition states stop so we can actually align
-        if self.current_state == "exploring" and state.curr_state != "exploring":
+        if self.current_state in ["exploring1", "exploring2"] and state.curr_state not in ["exploring1", "exploring2"]:
             rospy.loginfo("stop the boy please")
             twist = Twist()
             self.ros_ctrl.pub_vel.publish(twist)
             sleep(0.2)
 
         self.current_state = state.curr_state
+        self.desired_color_detection = state.desired_color_detect
 
         return
 
@@ -103,12 +115,12 @@ class laserAvoid:
         self.front_warning = 0
 
         #handle our alignment case
-        if self.current_state == "aligning":
+        if self.current_state in ["aligning1", "aligning2"]:
 
             rospy.loginfo("aligning the boy")
             max_velocity = 0.5
-            kp = 1 #currently is random.
-            ki = 0.1
+            kp = 0.5 #currently is random.
+            ki = 0.2
             kd = 0.1
             time_step = 1/10 #assume ros 10 hz is met
             curr_error = np.inf
@@ -126,14 +138,14 @@ class laserAvoid:
             self.front_warning = np.sum(ranges[front_angles] < self.ResponseDist/2)
 
 
-            if self.velocity_decision == "search" and self.last_color_detection == "red":
+            if self.velocity_decision == "search" and self.last_color_detection == self.desired_color_detection:
                 self.ros_ctrl.pub_vel.publish(Twist())
                 sleep(0.2)
 
              
-            if self.last_color_detection == "red":
-                velocity_decision = "p control"
-                curr_error = (self.image_center - np.mean(self.center_detections))/np.float(self.image_center*2)
+            if self.last_color_detection == self.desired_color_detection:
+                self.velocity_decision = "p control"
+                curr_error = (self.image_center - self.detection_center)/np.float(self.image_center*2)
                 self.running_error += time_step*curr_error
                 angular_velocity = kp*curr_error + ki*self.running_error + (curr_error - self.last_error)*kd
                 angular_velocity = np.sign(angular_velocity) * min(np.abs(angular_velocity), max_velocity)
@@ -141,34 +153,65 @@ class laserAvoid:
                 self.last_direction = np.sign(angular_velocity)
 
             else:
-                velocity_decision = "search"
+                self.velocity_decision = "search"
                 sign = -1*self.last_direction
                 sign = sign if sign != 0 else -1
                 angular_velocity = sign*max_velocity
+                self.running_error = 0 #reset this so error only reflects when we see the thing
 
-            rospy.loginfo("Setting velocity based on %s\n. Image center is %d\n. Center detection is %d\n. Desired velocity is %f", velocity_decision, self.image_center, self.detection_center, angular_velocity)
+            rospy.loginfo("Setting velocity based on %s.\n Image center is %d.\n Center detection is %d.\n Desired velocity is %f", self.velocity_decision, self.image_center, self.detection_center, angular_velocity)
 
 
             twist = Twist()
-            twist.angular.z = 0 if np.abs(angular_velocity) < 0.1*max_velocity else angular_velocity
 
-            if np.abs(curr_error) <= 0.25 and self.velocity_decision != "search":
+            #end criteria for angle alignment (first align angle, then get as close as possible)
+            angle_error_criteria = np.abs(angular_velocity) < 0.2*max_velocity
+            twist.angular.z = 0 if angle_error_criteria or not self.aligning_angle else angular_velocity
+
+            self.aligning_angle = not angle_error_criteria 
+            rospy.loginfo("angle alignment state %d", self.aligning_angle)
+
+
+            #TODO: it isn't moving towards the guy anymore. Figure out why
+            rospy.loginfo("number forward lidar detections %d and current velocity driver %s", self.front_warning, self.velocity_decision)
+            if not self.aligning_angle: #np.abs(curr_error) <= 0.35 and self.velocity_decision != "search":
                 if self.front_warning < 20: #may want to have more ifs later so nesting this way
-                    twist.linear.x = 0.15
+                    twist.linear.x = 0.1
+                    rospy.loginfo("moving towards detection")
                 else:
                     twist.linear.x = 0
-            
-            if twist.linear.x == 0 and twist.angular.z == 0:
-                rospy.loginfo("reached end condition!")
+                    self.in_range_of_goal = True
+
                 #TODO: figure out a way to signal a transition in state
 
             self.ros_ctrl.pub_vel.publish(twist)
             sleep(0.2)
 
+            #end condition
+            if not self.aligning_angle and self.in_range_of_goal:
+                #for now, just exit if we get it once
+                rospy.loginfo("reached end condition!")
+                self.aligned_pub.publish(True)
+                self.current_state = "" #ensure we don't do anything until the controller tells us
+
+                #reset a ton of variables
+                self.image_center = None
+                self.detection_center = None
+                self.center_detections = np.zeros(5)
+                self.moving_average_initalized = False
+                self.last_color_detection = ""
+                self.running_error = 0
+                self.last_error = 0
+                self.velocity_decision = "search"
+                self.last_direction = -1
+                self.end_state_counter = 0
+                self.in_range_of_goal = False
+                self.aligning_angle = True
+
 
        
         #Treat the orignal lidear avoidance as the exploring state
-        if self.current_state == "exploring":
+        if self.current_state in ["exploring1", "exploring2"]:
             # 按距离排序以检查从较近的点到较远的点是否是真实的东西
             # if we already have a last scan to compare to
             for i in range(len(ranges)):

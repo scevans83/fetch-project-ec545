@@ -13,13 +13,28 @@ import cv2 # OpenCV library
 import numpy as np
 from std_msgs.msg import String
 from cv_basics.msg import cv_results
+from fetch_controller.msg import state_status
 from align_color import find_contours_and_colors, label_contours_and_colors, find_contour_center
+
+curr_state = ""
+desired_color = "red"
+
+def state_status_callback(msg):
+   global curr_state
+   global desired_color
+
+   rospy.loginfo("updating current state %s and desired color %s", msg.curr_state, msg.desired_color_detect)
+   
+   curr_state = msg.curr_state
+   desired_color = msg.desired_color_detect
+   
   
 def publish_message():
  
   # Node is publishing to the video_frames topic using 
   # the message type Image
   pub = rospy.Publisher('/video_processing_results', cv_results, queue_size=10)
+  rospy.Subscriber('/state_status', state_status, state_status_callback)
      
   # Tells rospy the name of the node.
   # Anonymous = True makes sure the node has a unique name. Random
@@ -38,6 +53,8 @@ def publish_message():
  
   # While ROS is still running.
   last_offset = None
+  global desired_color
+  global curr_state
   while not rospy.is_shutdown():
      
       # Capture frame-by-frame
@@ -47,14 +64,24 @@ def publish_message():
          
       if ret == True:
         # Print debugging information to the terminal
-        rospy.loginfo('processing image')
 
-        desired_color = "red"
-        red_lower = (0, 0, 175) 
-        red_upper = (200, 200, 255)
+
+        #select the proper mask
+        if desired_color == "green":
+          lower_color_thresh = (0, 60, 0)
+          upper_color_thresh= (90, 125, 90)
+          dist_thresh = 150
+        elif desired_color == "red":
+          lower_color_thresh = (0, 0, 175) 
+          upper_color_thresh = (200, 200, 255)
+          dist_thresh = 100
+        else:
+          lower_color_thresh = (0, 0, 0) 
+          upper_color_thresh = (255, 255, 255)
+           
 
         view_mask = True
-        contours, color_list, mask = find_contours_and_colors(frame, red_lower, red_upper, lower = 3000, upper = 200000)
+        contours, color_list, mask = find_contours_and_colors(frame, lower_color_thresh, upper_color_thresh, lower = 3000, upper = 200000, color_dist_thresh=dist_thresh)
         
         if not view_mask:
           mask = None

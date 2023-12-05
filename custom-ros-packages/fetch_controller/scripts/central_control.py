@@ -2,7 +2,7 @@
 # coding:utf-8
 import rospy
 # from geometry_msgs.msg import Twist
-# from std_msgs.msg import Bool
+from std_msgs.msg import Bool
 from fetch_controller.msg import state_status
 from cv_basics.msg import cv_results
 
@@ -11,13 +11,19 @@ class fetchControl:
         rospy.on_shutdown(self.cancel)
         self.pub_status = rospy.Publisher('/state_status', state_status, queue_size=3)
         self.sub_image_results = rospy.Subscriber('/video_processing_results', cv_results, self.cv_results_callback)
+        self.sub_image_results = rospy.Subscriber('/reached_ball', Bool, self.reached_ball_callback)
         self.most_recent_color_detection = ""
-        self.curr_state = "exploring"
+        self.curr_state = ""
+        self.reached_ball = False
 
     def cv_results_callback(self, msg):
        rospy.loginfo("updating state with color " + msg.detected_color)
        self.most_recent_color_detection = msg.detected_color
        return
+    
+    def reached_ball_callback(self, msg):
+       self.reached_ball = msg
+       
        
 
     #TODO: set this up so that it stops the bot (hopefully?)
@@ -49,18 +55,41 @@ def publish_message(controller):
 
       #### STATE TRANSITION #####
 
-      if controller.curr_state == "exploring":
-         controller.curr_state = "exploring" if controller.most_recent_color_detection != "red" else "aligning"
+      #initial state def
+      if controller.curr_state == "":
+         next_state = "exploring1"
+         next_color = "red"
+
+
+      if controller.curr_state == "exploring1":
+         next_state = "exploring1" if controller.most_recent_color_detection != "red" else "aligning1"
+         next_color = "red"
       
-      #currently, you get stuck here Jimbo
-      if controller.curr_state == "aligning":
-         pass
+
+      if controller.curr_state  == "aligning1":
+         next_state = "aligning1" if not controller.reached_ball else "exploring2"
+         next_color = "red" if not controller.reached_ball else "green"
+
+
+      if controller.curr_state  == "exploring2":
+         next_state = "exploring2" if controller.most_recent_color_detection != "green" else "aligning2"
+         next_color = "green"
+
+
+      if controller.curr_state  == "aligning2":
+         next_state = "aligning2" if controller.reached_ball != True else "exploring1"
+         next_color = "green" if controller.reached_ball != True else "red"
 
       ### end state transition
 
+      if next_state != controller.curr_state:
+         #update current state
+         controller.curr_state = next_state
 
-      curr_status.curr_state = controller.curr_state
-      controller.pub_status.publish(curr_status)
+         #publish state update
+         curr_status.curr_state = controller.curr_state
+         curr_status.desired_color_detect = next_color
+         controller.pub_status.publish(curr_status)
 
       #TODO: left off modifying laser avoidance to use this status to change what it's doing
              
