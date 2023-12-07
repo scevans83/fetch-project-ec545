@@ -189,7 +189,7 @@ class laserAvoid:
             twist = Twist()
 
             #end criteria for angle alignment (first align angle, then get as close as possible)
-            angle_error_criteria = np.abs(angular_velocity) < 0.2*max_velocity
+            angle_error_criteria = np.abs(angular_velocity) < 0.1*max_velocity
             twist.angular.z = 0 if angle_error_criteria or not self.aligning_angle else angular_velocity
 
             if self.aligning_angle and angle_error_criteria:
