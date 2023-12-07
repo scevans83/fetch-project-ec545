@@ -12,6 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
         rosmsg
         rospy
         dynamic_reconfigure
+        cv_basics
+        fetch_controller
+        std_msgs
         )
 
 ## System dependencies are found with CMake's conventions

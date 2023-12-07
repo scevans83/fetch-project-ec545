@@ -6,10 +6,10 @@
     output="screen"
   />
 
-  <node
+  <!-- <node
     pkg="cv_basics"
     type="webcamsub.py"
     name="webcam_sub"
     output="screen"
-  />
+  /> -->
 </launch>
