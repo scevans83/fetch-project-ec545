@@ -41,6 +41,7 @@ class laserAvoid:
         self.aligning_angle = True
         self.in_range_of_goal = False
         self.transmit_goal_reached = False
+        self.aligned_count = 0
 
         #output publisher
         self.aligned_pub = rospy.Publisher('/reached_ball', Bool, queue_size=1)
@@ -120,6 +121,7 @@ class laserAvoid:
         if self.transmit_goal_reached and self.current_state in ["exploring1", "exploring2"]:
             
             self.transmit_goal_reached = False
+            self.aligned_pub.publish(False)
             
             #reset a ton of variables
             self.image_center = None
@@ -134,14 +136,15 @@ class laserAvoid:
             self.end_state_counter = 0
             self.in_range_of_goal = False
             self.aligning_angle = True
+            self.aligned_count = 0
 
         #handle our alignment case
         if self.current_state in ["aligning1", "aligning2"]:
 
             rospy.loginfo("aligning the boy")
             max_velocity = 0.5
-            kp = 0.5 #currently is random.
-            ki = 0.2
+            kp = 0.2 #currently is random.
+            ki = 0.1
             kd = 0.1
             time_step = 1/10 #assume ros 10 hz is met
             curr_error = np.inf
@@ -175,7 +178,7 @@ class laserAvoid:
 
             else:
                 self.velocity_decision = "search"
-                sign = -1*self.last_direction
+                sign = self.last_direction
                 sign = sign if sign != 0 else -1
                 angular_velocity = sign*max_velocity
                 self.running_error = 0 #reset this so error only reflects when we see the thing
@@ -190,7 +193,10 @@ class laserAvoid:
             twist.angular.z = 0 if angle_error_criteria or not self.aligning_angle else angular_velocity
 
             if self.aligning_angle and angle_error_criteria:
-                self.aligning_angle = False
+                self.aligned_count += 1
+
+                if self.aligned_count >=5:
+                    self.aligning_angle = False
             rospy.loginfo("angle alignment state %d", self.aligning_angle)
 
 
@@ -207,13 +213,15 @@ class laserAvoid:
                 #TODO: figure out a way to signal a transition in state
 
             self.ros_ctrl.pub_vel.publish(twist)
-            sleep(0.1)
+            sleep(0.2)
 
             #end condition
             if (not self.aligning_angle and self.in_range_of_goal) or self.transmit_goal_reached:
                 #for now, just exit if we get it once
                 rospy.loginfo("reached end condition!")
+                self.transmit_goal_reached = True
                 self.aligned_pub.publish(True)
+
                 
 
                

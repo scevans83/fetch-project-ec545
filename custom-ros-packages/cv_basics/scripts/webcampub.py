@@ -67,23 +67,28 @@ def publish_message():
 
 
         #select the proper mask
-        if desired_color == "green":
-          # lower_color_thresh = (0, 30, 0)
-          # upper_color_thresh= (110, 150, 110)
-          lower_color_thresh = (0, 0, 0)
-          upper_color_thresh= (255, 255, 255)
+        if desired_color == "red":
+          lower_color_thresh = (0, 0, 175)
+          upper_color_thresh= (100, 100, 255)
+          lower_area = 1500
+          upper_area = 30000
+          dist_thresh = 125
+        elif desired_color == "blue":
+          lower_color_thresh = (125, 0, 0)
+          upper_color_thresh = (255, 200, 20)
+          lower_area = 5000
+          upper_area = 200000
           dist_thresh = 150
-        elif desired_color == "red":
-          lower_color_thresh = (0, 0, 175) 
-          upper_color_thresh = (200, 200, 255)
-          dist_thresh = 100
         else:
           lower_color_thresh = (0, 0, 0) 
           upper_color_thresh = (255, 255, 255)
+          lower_area = 5000
+          upper_area = 200000
+          dist_thresh = 100
            
 
         view_mask = True
-        contours, color_list, mask = find_contours_and_colors(frame, lower_color_thresh, upper_color_thresh, lower = 3000, upper = 200000, color_dist_thresh=dist_thresh)
+        contours, color_list, mask = find_contours_and_colors(frame, lower_color_thresh, upper_color_thresh, lower = lower_area, upper = upper_area, color_dist_thresh=dist_thresh)
         
         if not view_mask:
           mask = None

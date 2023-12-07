@@ -17,12 +17,21 @@ class fetchControl:
         self.reached_ball = False
 
     def cv_results_callback(self, msg):
-       rospy.loginfo("controller: updating state with color " + msg.detected_color)
+      #  rospy.loginfo("controller: updating state with color " + msg.detected_color)
        self.most_recent_color_detection = msg.detected_color
        return
     
     def reached_ball_callback(self, msg):
-       self.reached_ball = msg
+
+
+       
+      if "aligning" in self.curr_state:
+         rospy.loginfo("controller: received ball_reached")
+         self.reached_ball = msg
+      else: 
+         self.reached_ball = False
+
+
        
        
 
@@ -68,18 +77,22 @@ def publish_message(controller):
       
 
       if controller.curr_state  == "aligning1":
-         next_state = "aligning1" if not controller.reached_ball else "exploring2"
-         next_color = "red" if not controller.reached_ball else "green"
+         next_state =  "exploring2" if controller.reached_ball else "aligning1"
+         next_color = "red" if not controller.reached_ball else "blue"
 
 
       if controller.curr_state  == "exploring2":
-         next_state = "exploring2" if controller.most_recent_color_detection != "green" else "aligning2"
-         next_color = "green"
+         next_state = "exploring2" if controller.most_recent_color_detection != "blue" else "aligning2"
+         next_color = "blue"
 
 
       if controller.curr_state  == "aligning2":
-         next_state = "aligning2" if controller.reached_ball != True else "exploring1"
-         next_color = "green" if controller.reached_ball != True else "red"
+         next_state = "aligning2" if not controller.reached_ball else "waiting"
+         next_color = "blue" if not controller.reached_ball else ""
+
+         #reset this value
+         if controller.reached_ball:
+            controller.reached_ball = False
 
       ### end state transition
 

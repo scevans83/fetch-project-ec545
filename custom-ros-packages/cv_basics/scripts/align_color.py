@@ -7,11 +7,11 @@ view_exploration = False
 #here's our list of supported colors
 #helpful source: https://www.rapidtables.com/web/color/RGB_Color.html
 max_color_val = 255
-supported_colors = {"red":        (0, 0, max_color_val),
+supported_colors = {"red":        (0, 0, 255),
                     # "green":      (0, max_color_val, 0),
-                    "green":      (30, 100, 80),
+                    # "green":      (0, 255, 0),
                     # "green":      (30, 100, 80), #specific green folder
-                    "blue":       (max_color_val, 0, 0),
+                    "blue":       (255, 0, 0),
                     # "white":      (max_color_val, max_color_val, max_color_val),
                     # "black":      (0, 0, 0),
                     # "yellow":     (0, max_color_val, max_color_val),
@@ -47,17 +47,17 @@ def simple_mask(img, mask_dim, threshold = 200):
     mask = np.uint8(255*(img[:, :, mask_dim] > threshold))
     return mask
 
-def bgr_mask(img, lower_thresholds, upper_thresholds):
-    """
-    allows us to do basic upper and lower bound thresholding mask on bgr values in an image.
-    """
-    condition0 = (img[:, :, 0] > lower_thresholds[0]) & (img[:, :, 0] < upper_thresholds[0])
-    condition1 = (img[:, :, 1] > lower_thresholds[1]) & (img[:, :, 0] < upper_thresholds[1])
-    condition2 = (img[:, :, 2] > lower_thresholds[2]) & (img[:, :, 0] < upper_thresholds[2])
+# def bgr_mask(img, lower_thresholds, upper_thresholds):
+#     """
+#     allows us to do basic upper and lower bound thresholding mask on bgr values in an image.
+#     """
+#     condition0 = (img[:, :, 0] > lower_thresholds[0]) & (img[:, :, 0] < upper_thresholds[0])
+#     condition1 = (img[:, :, 1] > lower_thresholds[1]) & (img[:, :, 1] < upper_thresholds[1])
+#     condition2 = (img[:, :, 2] > lower_thresholds[2]) & (img[:, :, 2] < upper_thresholds[2])
 
-    mask = np.uint8(255*(condition0 & condition1 & condition2))
+#     mask = np.uint8(255*(condition0 & condition1 & condition2))
 
-    return mask
+#     return mask
 
 def find_contours(img, tree, approx, lower = 5000, upper = 500000):
     """
@@ -72,9 +72,16 @@ def find_contours(img, tree, approx, lower = 5000, upper = 500000):
 
     for contour in contours:
         area = cv2.contourArea(contour)
+        epsilon = 0.1*cv2.arcLength(contour,True)
+        approx = cv2.approxPolyDP(contour,epsilon,True)
+
 
         if area < lower or area > upper:
             continue
+
+        # if len(approx) > 15 :
+        #     continue
+
         filtered_contours.append(contour)
 
     return filtered_contours
@@ -93,9 +100,18 @@ def get_average_value(lab_img, contour):
 
     return mean
 
-def predict_color(avg_value, threshold = 100):
+def predict_color(avg_value, threshold = 100, colors_of_interest = []):
     """
     """
+
+    #TODO: make this change!
+    # if len(colors_of_interest != 0):
+    #     color_vals = lab_color_vals[colors_of_interest]
+    #     names = [color_names[idx] for idx in colors_of_interest]
+    # else:
+    #     color_vals = lab_color_vals
+    #     names = color_names
+
   
     distances = np.zeros(len(lab_color_vals))
     for idx in range(len(distances)):
@@ -160,8 +176,10 @@ def find_contours_and_colors(img, lower_threshold, upper_threshold, lower = 1500
     """
     """
 
-    mask = bgr_mask(img, lower_threshold, upper_threshold)
+    mask = cv2.inRange(img, lower_threshold, upper_threshold)
+
     img = cv2.bitwise_and(img, img, mask = mask)
+
     contours = find_contours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE, lower=lower, upper=upper)
     color_list = find_contour_colors(img, contours, threshold=color_dist_thresh)
 
@@ -240,7 +258,7 @@ def main():
         ret,img = frame.read()
 
         # mask = simple_mask(img, 2, threshold = 125) #red
-        mask = bgr_mask(img, (0, 0, 175), (200, 200, 255))
+        mask = cv2.inRange(img, (0, 0, 175), (200, 200, 255))
 
         #Only the red simple mask works well enough with the red objects I have. We may want to filter on multiple channels (eg. blue > thresh1, red > thresh2, etc.)
         # mask = simple_mask(img, 1, threshold = 150) #green
