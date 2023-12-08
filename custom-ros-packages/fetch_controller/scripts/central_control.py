@@ -1,10 +1,35 @@
 #!/usr/bin/env python
 # coding:utf-8
+# gpio library
+import Jetson.GPIO as GPIO
+
 import rospy
 # from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 from fetch_controller.msg import state_status
 from cv_basics.msg import cv_results
+
+#GPIO functions
+# Define the GPIO pin connected to your device
+device_pin = 15  # Modify this to match your actual setup
+
+def setup_gpio():
+    GPIO.setmode(GPIO.BOARD)  # Use BOARD numbering scheme
+    GPIO.setup(device_pin, GPIO.OUT)
+    GPIO.output(device_pin, GPIO.LOW)
+
+def send_data_to_device(state, reached_ball):
+	if reached_ball == False:
+		if state != "exploring1":
+			GPIO.output(device_pin, GPIO.HIGH)
+		else:
+			GPIO.output(device_pin, GPIO,LOW)
+	else:
+		GPIO.output(device_pin, GPIO.LOW)
+        
+def close_gpio():
+	GPIO.cleanup()
+#------------------------------------------------------------
 
 class fetchControl:
     def __init__(self):
@@ -40,6 +65,7 @@ class fetchControl:
         # self.pub_vel.publish(Twist())
         self.pub_status.unregister()
         self.sub_image_results.unregister()
+        close_gpio() #Turn off GPIO
         rospy.loginfo("Shutting down this node.")
   
 def publish_message(controller):
@@ -105,6 +131,11 @@ def publish_message(controller):
       controller.pub_status.publish(curr_status)
       rospy.loginfo("controller: state update to %s\n\n", next_state)
 
+
+      #GPIO stuff
+      #send_data_to_device(controller.curr_state, controller.reached_ball)
+      GPIO.output(device_pin, GPIO.HIGH) #for testing
+
       #TODO: left off modifying laser avoidance to use this status to change what it's doing
              
       # Sleep just enough to maintain the desired rate
@@ -113,6 +144,7 @@ def publish_message(controller):
 if __name__ == '__main__':
   try:
     controller = fetchControl()
+    setup_gpio()
     publish_message(controller)
   except rospy.ROSInterruptException:
     pass
