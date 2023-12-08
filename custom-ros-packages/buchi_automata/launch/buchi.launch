@@ -1,0 +1,9 @@
+<launch>
+  <node
+    pkg="buchi_automata"
+    type="monitor_specifications.py"
+    name="spec_monitor"
+    output="screen"
+  />
+
+</launch>
