@@ -1,0 +1,30 @@
+[rospy.client][INFO] 2023-12-09 02:27:20,115: init_node, name[/spec_monitor], pid[7576]
+[xmlrpc][INFO] 2023-12-09 02:27:20,117: XML-RPC server binding to 0.0.0.0:0
+[rospy.init][INFO] 2023-12-09 02:27:20,119: ROS Slave URI: [http://192.168.1.146:37955/]
+[xmlrpc][INFO] 2023-12-09 02:27:20,120: Started XML-RPC server [http://192.168.1.146:37955/]
+[rospy.impl.masterslave][INFO] 2023-12-09 02:27:20,121: _ready: http://192.168.1.146:37955/
+[xmlrpc][INFO] 2023-12-09 02:27:20,127: xml rpc node: starting XML-RPC server
+[rospy.registration][INFO] 2023-12-09 02:27:20,128: Registering with master node http://192.168.1.146:11311
+[rospy.registration][INFO] 2023-12-09 02:27:20,128: registering subscriber topic [/state_status] type [fetch_controller/state_status] with master
+[rospy.registration][INFO] 2023-12-09 02:27:20,146: registering subscriber topic [/reached_ball] type [std_msgs/Bool] with master
+[rospy.internal][INFO] 2023-12-09 02:27:20,208: topic[/state_status] adding connection to [http://192.168.1.146:38829/], count 0
+[rospy.init][INFO] 2023-12-09 02:27:20,220: registered with master
+[rospy.rosout][INFO] 2023-12-09 02:27:20,221: initializing /rosout core topic
+[rospy.rosout][INFO] 2023-12-09 02:27:20,256: connected to core topic /rosout
+[rospy.simtime][INFO] 2023-12-09 02:27:20,283: /use_sim_time is not set, will not subscribe to simulated time [/clock] topic
+[rosout][INFO] 2023-12-09 02:27:20,308: automata: beginning monitoring 
+[rosout][INFO] 2023-12-09 02:27:20,408: automata: beginning monitor of spec 1: G(exploring1 => F(ball_grabbed))
+[rospy.internal][INFO] 2023-12-09 02:27:20,477: topic[/rosout] adding connection to [/rosout], count 0
+[rospy.internal][INFO] 2023-12-09 02:27:22,905: topic[/reached_ball] adding connection to [http://192.168.1.146:34375/], count 0
+[rosout][INFO] 2023-12-09 02:27:31,709: automata: reached end condition of spec 1. Time elapsed: 11.278758 s
+[rosout][INFO] 2023-12-09 02:27:31,808: automata: beginning monitor of spec 2: G(exploring2 => F(at_goal))
+[rosout][INFO] 2023-12-09 02:27:39,008: automata: reached end condition of spec 2. Time elapsed: 7.195488 s
+[rospy.internal][INFO] 2023-12-09 02:27:44,413: topic[/state_status] removing connection to http://192.168.1.146:38829/
+[rospy.core][INFO] 2023-12-09 02:27:44,416: signal_shutdown [signal-2]
+[rospy.internal][INFO] 2023-12-09 02:27:44,417: topic impl's ref count is zero, deleting topic /reached_ball...
+[rospy.internal][INFO] 2023-12-09 02:27:44,417: topic[/reached_ball] removing connection to http://192.168.1.146:34375/
+[rospy.internal][INFO] 2023-12-09 02:27:44,435: topic impl's ref count is zero, deleting topic /state_status...
+[rosout][INFO] 2023-12-09 02:27:44,462: Shutting down this node.
+[rospy.internal][INFO] 2023-12-09 02:27:44,516: topic[/rosout] removing connection to /rosout
+[rospy.impl.masterslave][INFO] 2023-12-09 02:27:44,517: signal-2
+[rospy.core][INFO] 2023-12-09 02:27:45,134: signal_shutdown [atexit]
