@@ -1,5 +1,6 @@
 <launch>
     <include file="$(find yahboomcar_laser)/launch/laser_Avoidance.launch"/>
+    <include file="$(find buchi_automata)/launch/buchi.launch"/>
     <node name='fetch_command' pkg="fetch_controller" type="central_control.py" required="true" output="screen"/>
     
 

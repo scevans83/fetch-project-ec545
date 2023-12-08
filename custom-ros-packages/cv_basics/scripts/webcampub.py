@@ -18,6 +18,7 @@ from align_color import find_contours_and_colors, label_contours_and_colors, fin
 
 curr_state = ""
 desired_color = "red"
+view_enable = True
 
 def state_status_callback(msg):
    global curr_state
@@ -95,9 +96,9 @@ def publish_message():
         
         labeled_frame = label_contours_and_colors(frame, contours, color_list, mask = mask)
 
-
-        cv2.imshow("test", labeled_frame)
-        cv2.waitKey(10)
+        if(view_enable):
+          cv2.imshow("test", labeled_frame)
+          cv2.waitKey(10)
 
         curr_offset = None
 
