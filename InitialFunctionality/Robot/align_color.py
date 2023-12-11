@@ -10,12 +10,12 @@ view_exploration = True
 max_color_val = 255
 supported_colors = {"red":        (0, 0, max_color_val),
                     "green":      (0, max_color_val, 0),
-                    # "blue":       (max_color_val, 0, 0),
-                    # "white":      (max_color_val, max_color_val, max_color_val),
-                    # "black":      (0, 0, 0),
-                    # "yellow":     (0, max_color_val, max_color_val),
-                    # "magenta":   (max_color_val, 0, max_color_val),
-                    # "cyan":       (max_color_val, max_color_val, 0)
+                    "blue":       (max_color_val, 0, 0),
+                    "white":      (max_color_val, max_color_val, max_color_val),
+                    "black":      (0, 0, 0),
+                    "yellow":     (0, max_color_val, max_color_val),
+                    "magenta":   (max_color_val, 0, max_color_val),
+                    "cyan":       (max_color_val, max_color_val, 0)
                     }
 
 #convert the bgr data to lab color space
@@ -71,7 +71,7 @@ def get_average_value(lab_img, contour):
 
     return mean
 
-def predict_color(avg_value):
+def predict_color(avg_value, dist_threshold = 70):
     """
     """
   
@@ -82,7 +82,9 @@ def predict_color(avg_value):
     
     min_idx = np.argmin(distances)
 
-    if distances[min_idx] > 70:
+    #Minimum distance threshold for color ID
+    #TODO: may want to have a relative threshold - i.e. only classifier a color if it is significantly closer to said color than any other color
+    if distances[min_idx] > dist_threshold:
         color = None
     else:
         color = color_names[min_idx]
