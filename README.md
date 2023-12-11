@@ -5,4 +5,5 @@ This is a project for EC545 Cyberphysical Systems at Boston University. The goal
 ## Project Structure
 
 - The `InitialFunctionality` directory contains proofs-of-concept, tests, and other functions in progress.
-- The `custom-ros-packages` directory contains the four ROS melodic compatible packages that implement the fetch controller. (NOTE: this does not contain all the necessary dependent packages, which can be found on the rosmaster x3 setup page [here](http://www.yahboom.net/study/ROSMASTER-X3)
+- The `custom-ros-packages` directory contains the four ROS melodic compatible packages that implement the fetch controller. (NOTE: this does not contain all the necessary dependent packages, which can be found on the rosmaster x3 setup page [here](http://www.yahboom.net/study/ROSMASTER-X3))
+
