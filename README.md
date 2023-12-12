@@ -2,6 +2,14 @@
 
 This is a repo contains code the final project entitled "Fetch" for EC545 Cyberphysical Systems at Boston University during the Fall 2023 semester. The goal of this project is to design a controller for the Rosmaster X3 to play a game of fetch, where it searches for and finds a ball in the environment, before searching for and return the ball to a goal location. The Rosdmaster X3 uses its onboard camera to perform color detection. The ball is assumed to be red and the goal marker is assumed to be blue for the purpose of this design. 
 
+## Project members
+The following team members contributed to this project:
+- Casper Muter
+- Jimmy Fernandez
+- Sophie Evans
+- Kojo Osafo 
+
+
 ## Project Structure
 
 - The `InitialFunctionality` directory contains proofs-of-concept, tests, and other functions in progress.
